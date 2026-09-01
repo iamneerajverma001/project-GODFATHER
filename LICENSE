@@ -1,0 +1,29 @@
+JARVIS NON-COMMERCIAL RESEARCH LICENSE
+Version 1.0
+
+Copyright (c) 2026 JARVIS Corp.
+All rights reserved.
+
+This License dictates the terms of use, reproduction, and distribution of the Project GODFATHER Mixed-Signal Neuromorphic SoC codebase (including all Verilog, SystemVerilog, Analog Models, and Python NeuroForge SDK files).
+
+1. PERMITTED USES
+You are permitted to use, copy, modify, and merge this software and hardware IP for:
+- Personal testing and education.
+- Academic and non-commercial research.
+- Non-commercial simulation and evaluation.
+
+2. COMMERCIAL BAN
+You are STRICTLY PROHIBITED from using this software, hardware IP, or any derivative works for any commercial purpose. 
+"Commercial purpose" includes, but is not limited to:
+- Fabricating physical silicon (ASIC/Chiplet) for sale, trade, or internal corporate use.
+- Integrating the codebase into a product that is sold, leased, or licensed.
+- Utilizing the architecture in a corporate R&D environment intended for future commercialization.
+- Offering the SDK or RTL as a hosted service (e.g., Cloud APIs).
+
+3. ATTRIBUTION
+Any public dissemination of research or personal projects utilizing this architecture must retain this License file and attribute the original architecture to "JARVIS Corp."
+
+4. NO WARRANTY
+THIS ARCHITECTURE AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL JARVIS CORP BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+For Commercial Licensing inquiries, contact JARVIS Corp.
