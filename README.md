@@ -1,6 +1,14 @@
 <div align="center">
   
-# 🪨 PROJECT GODFATHER
+<pre>
+   _____  ____  _____  ______       _______ _    _ ______ _____  
+  / ____|/ __ \|  __ \|  ____|/\|__   __| |  | |  ____|  __ \ 
+ | |  __| |  | | |  | | |__  /  \    | |  | |__| | |__  | |__) |
+ | | |_ | |  | | |  | |  __|/ /\ \   | |  |  __  |  __| |  _  / 
+ | |__| | |__| | |__| | |  / ____ \  | |  | |  | | |____| | \ \ 
+  \_____|\____/|_____/|_| /_/    \_\ |_|  |_|  |_|______|_|  \_\
+</pre>
+
 ### Sub-Watt Mixed-Signal Neuromorphic SoC
 **By JARVIS Corp.**
 
@@ -14,6 +22,11 @@
 
 ## 🧬 Overview
 Project GODFATHER is a purely asynchronous, mixed-signal neuromorphic System-on-Chip (SoC) architecture. It abandons the von Neumann paradigm, global clocks, and digital ALUs. Instead, it utilizes continuous-time analog physics, 1S1R memristor crossbars, and Spike-Timing-Dependent Plasticity (STDP) to generate intelligence natively in the physical silicon.
+
+<div align="center">
+  <img src="sdk/brain_renders/state_delta_learning.png" width="400" alt="Physical Neuroplasticity Heatmap">
+  <p><em>Fig 1: NeuroForge Telemetry extracting physical STDP filament thickening in real-time.</em></p>
+</div>
 
 Designed for true **Embodied Intelligence**, the architecture consumes microwatts of power, allowing autonomous agents, aerospace robotics, and bio-sensors to learn continuously at the edge without cloud connectivity.
 
