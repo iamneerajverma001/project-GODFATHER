@@ -43,7 +43,7 @@ def main():
     from neuroforge.digital_twin import DigitalTwinSimulator
     print("\n[Phase 3] Booting GPU-Accelerated Digital Twin...")
     twin = DigitalTwinSimulator()
-    final_conductance = twin.simulate_packet_storm(nanoseconds=5000)
+    final_conductance = twin.simulate_packet_storm(nanoseconds=5000, global_reward=0.85)
     
     # 4. Swarm Intelligence: PUF-Locked Synaptic Sharing
     from neuroforge.swarm_protocol import SwarmAgent, SwarmOrchestrator

@@ -52,6 +52,17 @@ module godfather_core_tile #(
     end
 
     // 2. Physics Layer
+    real local_error_gradient;
+    always_comb begin
+        // The Holy Grail: Parsing Backward Error Gradients from the NoC AER Stream
+        // If MSB [31] is 1, the packet is a supervised error gradient payload.
+        if (rx_aer_req && rx_aer_data[31]) begin
+            local_error_gradient = $signed(rx_aer_data[15:0]) / 1000.0; 
+        end else begin
+            local_error_gradient = 0.0;
+        end
+    end
+
     memristor_crossbar #(
         .N_PRE(N_SENSORS+16+N_NEURONS),
         .N_POST(N_NEURONS),
@@ -61,6 +72,7 @@ module godfather_core_tile #(
     ) cognitive_matrix (
         .v_pre(crossbar_v_pre),
         .v_post(crossbar_v_post), 
+        .error_gradient(local_error_gradient),
         .i_out(soma_currents)
     );
 

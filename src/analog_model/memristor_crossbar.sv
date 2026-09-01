@@ -19,6 +19,7 @@ module memristor_crossbar #(
 )(
     input  real v_pre [0:N_PRE-1],   
     input  real v_post [0:N_POST-1], 
+    input  real error_gradient,      // The Holy Grail: Global/Local Error routing for 3-factor supervised learning
     output real i_out [0:N_POST-1]   
 );
 
@@ -91,16 +92,24 @@ module memristor_crossbar #(
                     cross_current = effective_v_diff * conductance[i][j];
                     column_current += cross_current;
                     
-                    // Non-Linear STDP (Exponential dependence on voltage)
-                    if (effective_v_diff > V_SET) begin
-                        // LTP (Set)
-                        delta_g = (G_MAX - conductance[i][j]) * 1e-3 * delta_t * ((effective_v_diff / V_SET) * (effective_v_diff / V_SET)); 
-                        conductance[i][j] += delta_g;
+                    // -------------------------------------------------------------
+                    // THE HOLY GRAIL: 3-Factor R-STDP (Eligibility Propagation)
+                    // -------------------------------------------------------------
+                    // STDP generates an eligibility trace based on local voltage gradients.
+                    // The Global Error Gradient dictates if this trace turns into LTP (learning)
+                    // or LTD (unlearning). If error_gradient == 0, the brain is in inference mode.
+                    if (error_gradient != 0.0) begin
+                        if (effective_v_diff > V_SET) begin
+                            // Eligibility trace is positive (Pre fired before Post)
+                            delta_g = (G_MAX - conductance[i][j]) * 1e-3 * delta_t * ((effective_v_diff / V_SET) * (effective_v_diff / V_SET)); 
+                            conductance[i][j] += (delta_g * error_gradient); // Modulate by Error
+                        end else if (effective_v_diff < V_RESET) begin
+                            // Eligibility trace is negative (Post fired before Pre)
+                            delta_g = (conductance[i][j] - G_MIN) * 1e-3 * delta_t * ((-effective_v_diff / -V_RESET) * (-effective_v_diff / -V_RESET));
+                            conductance[i][j] -= (delta_g * error_gradient); // Modulate by Error
+                        end
+                        // Clamp to physical bounds
                         if (conductance[i][j] > G_MAX) conductance[i][j] = G_MAX;
-                    end else if (effective_v_diff < V_RESET) begin
-                        // LTD (Reset)
-                        delta_g = (conductance[i][j] - G_MIN) * 1e-3 * delta_t * ((-effective_v_diff / -V_RESET) * (-effective_v_diff / -V_RESET));
-                        conductance[i][j] -= delta_g;
                         if (conductance[i][j] < G_MIN) conductance[i][j] = G_MIN;
                     end
                 end
