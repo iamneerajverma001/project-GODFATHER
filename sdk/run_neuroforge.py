@@ -12,13 +12,20 @@ def main():
     model = NeuroGraph(name="Godfather_Vision_Core", grid_x=2, grid_y=2, neurons_per_tile=64)
     
     # Layer 1: Input from Silicon Retina to V1
-    model.add_layer("V1_Cortex", AnalogLinear(in_features=64, out_features=64))
+    # We can inject simulated or real PyTorch tensors
+    import numpy as np
     
-    # Layer 2: V1 to V2
-    model.add_layer("V2_Cortex", AnalogLinear(in_features=64, out_features=128))
+    layer1 = AnalogLinear(64, 64)
+    layer1.load_pytorch_weights(np.random.randn(64, 64))
+    model.add_layer("V1_Cortex", layer1)
     
-    # Layer 3: Output Classification
-    model.add_layer("Classification", AnalogLinear(in_features=128, out_features=10))
+    layer2 = AnalogLinear(64, 128)
+    layer2.load_pytorch_weights(np.random.randn(64, 128))
+    model.add_layer("V2_Cortex", layer2)
+    
+    layer3 = AnalogLinear(128, 10)
+    layer3.load_pytorch_weights(np.random.randn(128, 10))
+    model.add_layer("Classification", layer3)
 
     # Compile the abstract model into physical NoC routes and Crossbar `.mem` files
     model.compile(output_dir="sdk/build")
@@ -35,7 +42,7 @@ def main():
     # 3. GPU-Accelerated Digital Twin
     from neuroforge.digital_twin import DigitalTwinSimulator
     print("\n[Phase 3] Booting GPU-Accelerated Digital Twin...")
-    twin = DigitalTwinSimulator(n_neurons=256)
+    twin = DigitalTwinSimulator()
     final_conductance = twin.simulate_packet_storm(nanoseconds=5000)
     
     # 4. Swarm Intelligence: PUF-Locked Synaptic Sharing

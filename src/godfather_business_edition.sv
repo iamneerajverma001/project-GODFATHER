@@ -94,7 +94,7 @@ module godfather_business_edition #(
                         for (genvar s = 0; s < 64; s++) assign dummy_sensors[s] = 0.0;
                         
                         godfather_core_tile #(
-                            .TILE_X(x), .TILE_Y(y), .N_SENSORS(64)
+                            .TILE_X(x), .TILE_Y(y), .TILE_Z(z), .N_SENSORS(64)
                         ) tile (
                             .sensor_voltages(dummy_sensors),
                             .global_temp_celsius(global_temp_celsius),

@@ -10,6 +10,7 @@
 module godfather_core_tile #(
     parameter int TILE_X = 0,
     parameter int TILE_Y = 0,
+    parameter int TILE_Z = 0,
     parameter int N_SENSORS = 64,
     parameter int N_NEURONS = 64
 )(
@@ -53,7 +54,10 @@ module godfather_core_tile #(
     // 2. Physics Layer
     memristor_crossbar #(
         .N_PRE(N_SENSORS+16+N_NEURONS),
-        .N_POST(N_NEURONS)
+        .N_POST(N_NEURONS),
+        .TILE_X(TILE_X),
+        .TILE_Y(TILE_Y),
+        .TILE_Z(TILE_Z)
     ) cognitive_matrix (
         .v_pre(crossbar_v_pre),
         .v_post(crossbar_v_post), 

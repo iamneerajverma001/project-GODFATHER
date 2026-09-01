@@ -12,7 +12,10 @@ module memristor_crossbar #(
     parameter real V_SET = 0.3,    // Lowered for subthreshold 1.0V logic
     parameter real V_RESET = -0.3,
     parameter real V_SELECTOR = 0.5,
-    parameter real R_WIRE = 0.1      
+    parameter real R_WIRE = 0.1,
+    parameter int TILE_X = 0,
+    parameter int TILE_Y = 0,
+    parameter int TILE_Z = 0
 )(
     input  real v_pre [0:N_PRE-1],   
     input  real v_post [0:N_POST-1], 
@@ -25,9 +28,13 @@ module memristor_crossbar #(
         // The NeuroForge SDK Bridge: Load physical initialized weights if present
         int fd;
         int status;
-        fd = $fopen("crossbar_init.mem", "r");
+        string filename;
+        
+        filename = $sformatf("sdk/build/TILE_%0d_%0d_%0d_init.mem", TILE_X, TILE_Y, TILE_Z);
+        fd = $fopen(filename, "r");
+        
         if (fd) begin
-            $display("Memristor Array: Loading NeuroForge physical weights...");
+            $display("Memristor Array [%0d][%0d][%0d]: Loading NeuroForge physical weights from %s", TILE_X, TILE_Y, TILE_Z, filename);
             for (int i = 0; i < N_PRE; i++) begin
                 for (int j = 0; j < N_POST; j++) begin
                     status = $fscanf(fd, "%e", conductance[i][j]);

@@ -17,16 +17,35 @@ class AnalogLinear:
         self.weights = []
         
     def load_pytorch_weights(self, pt_tensor):
-        """(Stub) Maps PyTorch fp32 weights linearly to physical analog conductances."""
-        # For simulation, we randomly initialize with physical variance
-        pass
+        """Maps PyTorch fp32 weights linearly to physical analog conductances."""
+        try:
+            import torch
+            import numpy as np
+            if isinstance(pt_tensor, torch.Tensor):
+                weights = pt_tensor.detach().cpu().numpy()
+            else:
+                weights = np.array(pt_tensor)
+                
+            # Min-Max Scaling to physical conductance constraints [G_MIN, G_MAX]
+            w_min, w_max = weights.min(), weights.max()
+            if w_max > w_min:
+                scaled = self.g_min + (weights - w_min) * (self.g_max - self.g_min) / (w_max - w_min)
+            else:
+                scaled = np.full(weights.shape, self.g_min)
+                
+            self.weights = scaled.tolist()
+            print(f"NeuroForge: [SUCCESS] Loaded and scaled {weights.shape} PyTorch tensor to physical limits.")
+        except ImportError:
+            print("NeuroForge: [WARNING] PyTorch/NumPy not found. Using stochastic boot.")
+            self.weights = []
 
 class NeuroGraph:
     """The compiler engine that places logical layers onto physical chiplets."""
-    def __init__(self, name="Godfather_Cluster", grid_x=2, grid_y=2, neurons_per_tile=64):
+    def __init__(self, name="Godfather_Cluster", grid_x=2, grid_y=2, grid_z=2, neurons_per_tile=64):
         self.name = name
         self.grid_x = grid_x
         self.grid_y = grid_y
+        self.grid_z = grid_z
         self.neurons_per_tile = neurons_per_tile
         self.layers = []
         self.routing_table = {}
@@ -37,13 +56,14 @@ class NeuroGraph:
     def _place_and_route(self):
         """
         The Spatial P&R Algorithm.
-        Maps logical layers to physical (X, Y) tiles.
-        Calculates Asynchronous AER routing hops.
+        Maps logical layers to physical (X, Y, Z) tiles.
+        Calculates Asynchronous AER routing hops in 3D.
         """
-        print("NeuroForge: Initiating Spatial Placement & Routing (P&R)...")
+        print("NeuroForge: Initiating Spatial 3D Placement & Routing (P&R)...")
         allocated_neurons = 0
         current_tile_x = 0
         current_tile_y = 0
+        current_tile_z = 0
         
         for name, layer in self.layers:
             # Determine how many physical tiles this layer requires
@@ -53,11 +73,13 @@ class NeuroGraph:
             # Map neurons to specific Tile Coordinates
             target_x = current_tile_x
             target_y = current_tile_y
+            target_z = current_tile_z
             
             self.routing_table[name] = {
-                "physical_core": f"TILE_{target_x}_{target_y}",
+                "physical_core": f"TILE_{target_x}_{target_y}_{target_z}",
                 "noc_target_x": target_x,
                 "noc_target_y": target_y,
+                "noc_target_z": target_z,
                 "aer_base_addr": allocated_neurons
             }
             
@@ -65,6 +87,8 @@ class NeuroGraph:
             current_tile_x = (current_tile_x + 1) % self.grid_x
             if current_tile_x == 0:
                 current_tile_y = (current_tile_y + 1) % self.grid_y
+                if current_tile_y == 0:
+                    current_tile_z = (current_tile_z + 1) % self.grid_z
 
     def compile(self, output_dir="sdk/build"):
         """Compiles the model into physical Verilog binaries."""
@@ -90,13 +114,18 @@ class NeuroGraph:
             mem_path = os.path.join(output_dir, f"{tile_name}_init.mem")
             
             with open(mem_path, 'w') as f:
-                for _ in range(layer.in_features):
-                    row = []
-                    for _ in range(layer.out_features):
-                        base = layer.g_min + ((layer.g_max - layer.g_min) * 0.1)
-                        noise = base * (random.uniform(-10, 10) / 100.0)
-                        row.append(f"{base + noise:e}")
-                    f.write(" ".join(row) + "\n")
+                if layer.weights and len(layer.weights) == layer.in_features:
+                    for r in range(layer.in_features):
+                        row = [f"{val:e}" for val in layer.weights[r]]
+                        f.write(" ".join(row) + "\n")
+                else:
+                    for _ in range(layer.in_features):
+                        row = []
+                        for _ in range(layer.out_features):
+                            base = layer.g_min + ((layer.g_max - layer.g_min) * 0.1)
+                            noise = base * (random.uniform(-10, 10) / 100.0)
+                            row.append(f"{base + noise:e}")
+                        f.write(" ".join(row) + "\n")
             print(f"NeuroForge: [SUCCESS] Physical Weights generated -> {mem_path}")
         
         print("NeuroForge: Compilation Complete. Hardware ready for asynchronous dispatch.")
