@@ -15,10 +15,25 @@ Here is the definitive technical breakdown of why current market leaders (GPUs/T
 
 ### ❌ Conventional AI (Nvidia H100, Google TPU)
 *   **The Von Neumann Bottleneck:** Current accelerators separate memory (HBM/SRAM) from compute (ALUs/Tensor Cores). To perform a single neural network calculation, the chip must fetch a weight from memory, move it across a bus, multiply it in an ALU, and write it back. 
+
+```mermaid
+graph LR
+    A[(HBM / SRAM\nMemory)] <-->|Gigabytes of Data Transfer\nMassive Heat & Latency| B(ALU / Tensor Core\nCompute)
+    style A fill:#ffcccc,stroke:#ff0000
+    style B fill:#ffcccc,stroke:#ff0000
+```
+
 *   **The Cost:** Over 90% of the energy in a GPU is wasted entirely on moving data back and forth, not on actually computing. This is why GPUs draw 700+ Watts and require liquid cooling.
 
 ### ⚡ Project GODFATHER
-*   **In-Memory Analog Compute:** In GODFATHER, the memory *is* the compute. We utilize a dense 1S1R (One-Selector One-Resistor) Memristor Crossbar. When an input voltage is applied to the matrix, the current naturally flows through the resistors. 
+*   **In-Memory Analog Compute:** In GODFATHER, the memory *is* the compute. We utilize a dense 1S1R (One-Selector One-Resistor) Memristor Crossbar. 
+
+```mermaid
+graph TD
+    A[Sensory Voltage Input] --> B{1S1R Memristor Matrix}
+    B -->|Physics: Ohm's Law (I = V/R)| C[Analog Current Output]
+    style B fill:#ccffcc,stroke:#00aa00
+```
 *   **The Physics Advantage:** The chip calculates matrix multiplications instantly, at the speed of light, using physical **Ohm's Law ($I = V/R$)** and **Kirchhoff's Current Law**. There are no ALUs. Data never moves. 
 *   **The Result:** Power consumption drops from hundreds of Watts to **Microwatts**.
 
