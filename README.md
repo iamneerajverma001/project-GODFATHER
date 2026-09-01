@@ -56,20 +56,23 @@ Hardware requires software. The repository includes **NeuroForge (v0.1)**, a Pyt
 
 ---
 
-## 🚀 Simulation & Usage
+## 🚀 1-Click Simulation (Idiot-Proof)
 *Note: This architecture utilizes advanced SystemVerilog Real-Number Modeling (RNM) and `$realtime` analog integration. It requires a mixed-signal capable simulator (e.g., Questa/ModelSim). Standard digital simulators (Verilator) will not compile the physics loops.*
 
-```bash
-# 1. Compile the Analog and Digital Cores
-vlog src/analog_model/*.sv src/digital/*.sv src/*.sv tb/*.sv
+We have provided automated pipelines that install dependencies, compile the Verilog, run the SoC simulation, and generate the physical 3D heatmaps in a single command.
 
-# 2. Run the Physics Engine
-vsim -c tb_godfather_core -do "run -all; quit"
-
-# 3. Extract the Telemetry via NeuroForge SDK
-cd sdk
-python run_neuroforge.py
+**For Windows (PowerShell):**
+```powershell
+.\run_demo.ps1
 ```
+
+**For Linux / macOS:**
+```bash
+chmod +x run_demo.sh
+./run_demo.sh
+```
+
+If you encounter EDA license errors, open the script and uncomment/set your license server environment variable before running.
 
 ## ⚖️ License & Commercialization
 This repository and its contents are strictly released under the **JARVIS Non-Commercial Research License**. 
