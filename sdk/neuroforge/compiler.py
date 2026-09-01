@@ -84,18 +84,19 @@ class NeuroGraph:
             json.dump(self.routing_table, f, indent=4)
         print(f"NeuroForge: [SUCCESS] NoC Routing Table generated -> {rt_path}")
         
-        # 2. Generate Physical Crossbar States (.mem)
-        mem_path = os.path.join(output_dir, "crossbar_init.mem")
-        with open(mem_path, 'w') as f:
-            # We generate the initialization for the first mapped tile to simulate boot
-            layer = self.layers[0][1]
-            for _ in range(layer.in_features):
-                row = []
-                for _ in range(layer.out_features):
-                    base = layer.g_min + ((layer.g_max - layer.g_min) * 0.1)
-                    noise = base * (random.uniform(-10, 10) / 100.0)
-                    row.append(f"{base + noise:e}")
-                f.write(" ".join(row) + "\n")
-        print(f"NeuroForge: [SUCCESS] Physical Weight Matrices generated -> {mem_path}")
+        # 2. Generate Physical Crossbar States (.mem) for ALL Mapped Tiles
+        for name, layer in self.layers:
+            tile_name = self.routing_table[name]["physical_core"]
+            mem_path = os.path.join(output_dir, f"{tile_name}_init.mem")
+            
+            with open(mem_path, 'w') as f:
+                for _ in range(layer.in_features):
+                    row = []
+                    for _ in range(layer.out_features):
+                        base = layer.g_min + ((layer.g_max - layer.g_min) * 0.1)
+                        noise = base * (random.uniform(-10, 10) / 100.0)
+                        row.append(f"{base + noise:e}")
+                    f.write(" ".join(row) + "\n")
+            print(f"NeuroForge: [SUCCESS] Physical Weights generated -> {mem_path}")
         
         print("NeuroForge: Compilation Complete. Hardware ready for asynchronous dispatch.")

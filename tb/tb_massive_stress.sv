@@ -60,6 +60,13 @@ module tb_massive_stress;
         locked_key = chiplet_identity;
         $display("          [OK] Initial Lock Achieved: %x", locked_key[63:0]); // Display lower 64 bits
         
+        // Write PUF to file for Python NeuroForge to read
+        begin
+            int puf_fd = $fopen("puf_signature.txt", "w");
+            $fwrite(puf_fd, "%x\n", locked_key[63:0]);
+            $fclose(puf_fd);
+        end
+        
         // Power cycle with extreme thermal noise (Simulated inside the PUF)
         #100 power_on = 0; #100 power_on = 1;
         wait(identity_valid);
