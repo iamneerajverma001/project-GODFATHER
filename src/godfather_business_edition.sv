@@ -32,14 +32,14 @@ module godfather_business_edition #(
     );
 
     // Massive Mesh Interconnect (Arrays of handshakes)
-    // 0: Local, 1: North, 2: East, 3: South, 4: West
-    logic [31:0] link_data [0:MESH_X-1][0:MESH_Y-1][0:4];
-    logic        link_req  [0:MESH_X-1][0:MESH_Y-1][0:4];
-    logic        link_ack  [0:MESH_X-1][0:MESH_Y-1][0:4];
+    // 0: Local, 1: North, 2: East, 3: South, 4: West, 5: Up, 6: Down
+    logic [31:0] link_data [0:MESH_X-1][0:MESH_Y-1][0:6];
+    logic        link_req  [0:MESH_X-1][0:MESH_Y-1][0:6];
+    logic        link_ack  [0:MESH_X-1][0:MESH_Y-1][0:6];
 
-    logic [31:0] router_tx_data [0:MESH_X-1][0:MESH_Y-1][0:4];
-    logic        router_tx_req  [0:MESH_X-1][0:MESH_Y-1][0:4];
-    logic        router_tx_ack  [0:MESH_X-1][0:MESH_Y-1][0:4];
+    logic [31:0] router_tx_data [0:MESH_X-1][0:MESH_Y-1][0:6];
+    logic        router_tx_req  [0:MESH_X-1][0:MESH_Y-1][0:6];
+    logic        router_tx_ack  [0:MESH_X-1][0:MESH_Y-1][0:6];
 
     genvar x, y;
     generate
@@ -62,10 +62,11 @@ module godfather_business_edition #(
                     .rx_aer_ack(router_tx_ack[x][y][0])
                 );
 
-                // 2. The 5-Port Asynchronous NoC Router
+                // 2. The 7-Port Asynchronous 3D TSV NoC Router
                 async_noc_router #(
                     .X_COORD(x),
                     .Y_COORD(y),
+                    .Z_COORD(0), // Layer 0 for 2D base chiplet
                     .ADDR_WIDTH(32)
                 ) router (
                     .rx_data(link_data[x][y]),
@@ -77,11 +78,11 @@ module godfather_business_edition #(
                     .tx_ack(router_tx_ack[x][y])
                 );
                 
-                // (Omitted: Explicit X-Y neighbor wiring for brevity)
+                // (Omitted: Explicit X-Y-Z neighbor wiring for brevity)
                 // For massive stress testing, we auto-acknowledge all router outputs
                 // to simulate an infinitely fast receiving mesh and prevent deadlocks
                 // from unconnected ports (except Local Port 0, which is wired).
-                for (genvar p = 1; p < 5; p++) begin
+                for (genvar p = 1; p < 7; p++) begin
                     assign router_tx_ack[x][y][p] = router_tx_req[x][y][p];
                 end
                 
