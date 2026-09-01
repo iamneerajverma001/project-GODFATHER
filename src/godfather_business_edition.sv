@@ -9,10 +9,13 @@
 // ==============================================================================
 
 module godfather_business_edition #(
-    parameter int MESH_X = 2, // 2x2 Grid for proof-of-concept
+    parameter int MESH_X = 2,
     parameter int MESH_Y = 2
 )(
     input logic power_on,
+    input real  global_sensor_voltages [0:MESH_X-1][0:MESH_Y-1][0:63],
+    input real  global_temp_celsius,
+    
     // Enterprise PUF Identity
     output logic [255:0] chiplet_identity,
     output logic         identity_valid
@@ -44,13 +47,12 @@ module godfather_business_edition #(
             for (y = 0; y < MESH_Y; y++) begin : mesh_row
             
                 // 1. The Physics Cognitive Tile
-                real dummy_sensor [0:63]; // Abstracted for brevity
-                
                 godfather_core_tile #(
                     .TILE_X(x),
                     .TILE_Y(y)
                 ) tile (
-                    .sensor_voltages(dummy_sensor),
+                    .sensor_voltages(global_sensor_voltages[x][y]),
+                    .global_temp_celsius(global_temp_celsius),
                     .tx_aer_data(link_data[x][y][0]),
                     .tx_aer_req(link_req[x][y][0]),
                     .tx_aer_ack(link_ack[x][y][0]),
@@ -75,8 +77,13 @@ module godfather_business_edition #(
                     .tx_ack(router_tx_ack[x][y])
                 );
                 
-                // (Omitted: Explicit X-Y neighbor wiring for brevity, 
-                // in true RTL, East TX wires to neighbor West RX, etc.)
+                // (Omitted: Explicit X-Y neighbor wiring for brevity)
+                // For massive stress testing, we auto-acknowledge all router outputs
+                // to simulate an infinitely fast receiving mesh and prevent deadlocks
+                // from unconnected ports (except Local Port 0, which is wired).
+                for (genvar p = 1; p < 5; p++) begin
+                    assign router_tx_ack[x][y][p] = router_tx_req[x][y][p];
+                end
                 
             end
         end

@@ -14,6 +14,7 @@ module godfather_core_tile #(
     parameter int N_NEURONS = 64
 )(
     input  real sensor_voltages [0:N_SENSORS-1],
+    input  real global_temp_celsius,
     
     // NoC Local Port Interface
     output logic [31:0] tx_aer_data,
@@ -64,7 +65,7 @@ module godfather_core_tile #(
         for (i = 0; i < N_NEURONS; i++) begin : neuron_array
             subthreshold_lif soma (
                 .i_synaptic(soma_currents[i]),
-                .temp_celsius(25.0),
+                .temp_celsius(global_temp_celsius),
                 .spike_out(neuron_spikes[i]),
                 .spike_ack(neuron_acks[i]),
                 .v_membrane(soma_voltages[i])
