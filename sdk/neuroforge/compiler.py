@@ -7,6 +7,31 @@ import random
 import os
 import json
 
+try:
+    import torch
+    import torch.nn as nn
+    
+    class AnalogAwareLinear(nn.Linear):
+        """
+        Hardware-Aware Training Wrapper.
+        Injects simulated physical thermal noise and IR drop variance during the PyTorch 
+        forward pass, ensuring the model learns to be robust to analog memristor imperfections.
+        """
+        def __init__(self, in_features, out_features, noise_std=0.05, **kwargs):
+            super().__init__(in_features, out_features, **kwargs)
+            self.noise_std = noise_std
+            
+        def forward(self, x):
+            if self.training:
+                # Simulate read noise, thermal fluctuations, and finite precision
+                noise = torch.randn_like(self.weight) * self.noise_std * torch.abs(self.weight)
+                noisy_weight = self.weight + noise
+                return nn.functional.linear(x, noisy_weight, self.bias)
+            return super().forward(x)
+            
+except ImportError:
+    pass
+
 class AnalogLinear:
     """A logical neural layer to be mapped to physical Memristor Crossbars."""
     def __init__(self, in_features, out_features):

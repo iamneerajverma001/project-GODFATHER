@@ -16,6 +16,7 @@ module async_noc_router #(
 )(
     // Asynchronous Handshake Ports (Req/Ack/Data) for 7 directions
     // 0: Local, 1: North, 2: East, 3: South, 4: West, 5: Up (TSV), 6: Down (TSV)
+    input  logic                  rst_n,   // Global asynchronous active-low reset
     input  logic [ADDR_WIDTH-1:0] rx_data [0:6],
     input  logic                  rx_req  [0:6],
     output logic                  rx_ack  [0:6],
@@ -101,12 +102,16 @@ module async_noc_router #(
 
             // Asynchronous Latching Logic
             always_latch begin
-                for (int i = 0; i < 7; i++) begin
-                    if (p_req[i] && !port_busy) begin
-                        grant_locked[i] <= 1'b1;
-                    end
-                    else if (!incoming_reqs[i]) begin
-                        grant_locked[i] <= 1'b0;
+                if (!rst_n) begin
+                    for (int i = 0; i < 7; i++) grant_locked[i] <= 1'b0;
+                end else begin
+                    for (int i = 0; i < 7; i++) begin
+                        if (p_req[i] && !port_busy) begin
+                            grant_locked[i] <= 1'b1;
+                        end
+                        else if (!incoming_reqs[i]) begin
+                            grant_locked[i] <= 1'b0;
+                        end
                     end
                 end
             end

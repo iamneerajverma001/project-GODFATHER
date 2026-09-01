@@ -11,15 +11,30 @@
 module tb_massive_stress;
 
     // 1. DUT Instantiation (2x2 Mesh = 256 Neurons, 4 NoC Routers, 16K Memristors)
+    logic clk;
     logic power_on;
+    logic rst_n;
     real env_illumination [0:15][0:15];
     real env_audio = 0.0;
     logic [255:0] chiplet_identity;
     logic         identity_valid;
+    
+    // Encrypted Telemetry Out
+    logic [127:0] swarm_ct_data;
+    logic [127:0] swarm_auth_tag;
+    logic         swarm_ct_valid;
+    logic         swarm_ct_ready = 1;
+
+    // Clock Generation
+    initial begin
+        clk = 0;
+        forever #5 clk = ~clk;
+    end
 
     // Initialize sensors and temp
     real global_temp_celsius = 25.0;
     initial begin
+        rst_n = 0; // Assert reset at power-on
         for(int i=0; i<16; i++)
             for(int j=0; j<16; j++)
                 env_illumination[i][j] = 0.001; // Dark
@@ -30,12 +45,18 @@ module tb_massive_stress;
         .MESH_Y(2),
         .MESH_Z(2)
     ) dut (
+        .clk(clk),
         .power_on(power_on),
+        .rst_n(rst_n),
         .env_illumination(env_illumination),
         .env_audio_wave(env_audio),
         .global_temp_celsius(global_temp_celsius),
         .chiplet_identity(chiplet_identity),
-        .identity_valid(identity_valid)
+        .identity_valid(identity_valid),
+        .swarm_ct_data(swarm_ct_data),
+        .swarm_auth_tag(swarm_auth_tag),
+        .swarm_ct_valid(swarm_ct_valid),
+        .swarm_ct_ready(swarm_ct_ready)
     );
 
     // Trackers
@@ -54,21 +75,26 @@ module tb_massive_stress;
         // -------------------------------------------------------------
         $display("[PHASE 1] Booting Secure Enclave... testing ECC Fuzzy Extractor.");
         power_on = 0;
+        rst_n = 0;
         #100;
         power_on = 1;
+        #10;
+        rst_n = 1;
         wait(identity_valid);
         locked_key = chiplet_identity;
         $display("          [OK] Initial Lock Achieved: %x", locked_key[63:0]); // Display lower 64 bits
         
         // Write PUF to file for Python NeuroForge to read
         begin
-            int puf_fd = $fopen("puf_signature.txt", "w");
+            automatic int puf_fd = $fopen("puf_signature.txt", "w");
             $fwrite(puf_fd, "%x\n", locked_key[63:0]);
             $fclose(puf_fd);
         end
         
         // Power cycle with extreme thermal noise (Simulated inside the PUF)
-        #100 power_on = 0; #100 power_on = 1;
+        #100 power_on = 0; rst_n = 0; 
+        #100 power_on = 1; 
+        #10 rst_n = 1;
         wait(identity_valid);
         if (chiplet_identity !== locked_key) begin
             $display("          [FATAL] ECC Failed to correct thermal bit-flips!");

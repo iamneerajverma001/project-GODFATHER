@@ -14,7 +14,9 @@ module godfather_business_edition #(
     parameter int MESH_Y = 2,
     parameter int MESH_Z = 2
 )(
+    input logic clk,       // Sync clock for PCIe/Telemetry/Crypto periphery
     input logic power_on,
+    input logic rst_n,
     
     // Analog Environmental Inputs
     input real  env_illumination [0:15][0:15],
@@ -23,7 +25,13 @@ module godfather_business_edition #(
     
     // Enterprise PUF Identity (Zero-Knowledge Swarm Root of Trust)
     output logic [255:0] chiplet_identity,
-    output logic         identity_valid
+    output logic         identity_valid,
+    
+    // Zero-Trust Encrypted Swarm Telemetry Out
+    output logic [127:0] swarm_ct_data,
+    output logic [127:0] swarm_auth_tag,
+    output logic         swarm_ct_valid,
+    input  logic         swarm_ct_ready
 );
 
     // --------------------------------------------------------------------------
@@ -36,6 +44,27 @@ module godfather_business_edition #(
         .power_on(power_on),
         .puf_key(chiplet_identity),
         .key_valid(identity_valid)
+    );
+
+    // --------------------------------------------------------------------------
+    // ZERO-KNOWLEDGE HARDWARE CRYPTO ENGINE (Cures Flaw 3)
+    // --------------------------------------------------------------------------
+    logic [127:0] noc_telemetry_pt;
+    logic         noc_telemetry_valid;
+    logic         noc_telemetry_ready;
+    
+    aes_256_gcm_engine swarm_crypto (
+        .clk(clk),
+        .rst_n(rst_n),
+        .puf_key(chiplet_identity),
+        .key_valid(identity_valid),
+        .pt_data(noc_telemetry_pt),
+        .pt_valid(noc_telemetry_valid),
+        .pt_ready(noc_telemetry_ready),
+        .ct_data(swarm_ct_data),
+        .auth_tag(swarm_auth_tag),
+        .ct_valid(swarm_ct_valid),
+        .ct_ready(swarm_ct_ready)
     );
 
     // --------------------------------------------------------------------------
@@ -115,6 +144,7 @@ module godfather_business_edition #(
                         .X_COORD(x), .Y_COORD(y), .Z_COORD(z),
                         .ADDR_WIDTH(32)
                     ) router (
+                        .rst_n(rst_n),
                         .rx_data(link_data[x][y][z]),
                         .rx_req(link_req[x][y][z]),
                         .rx_ack(link_ack[x][y][z]),
