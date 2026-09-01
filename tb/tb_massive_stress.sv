@@ -12,25 +12,27 @@ module tb_massive_stress;
 
     // 1. DUT Instantiation (2x2 Mesh = 256 Neurons, 4 NoC Routers, 16K Memristors)
     logic power_on;
-    real  test_sensors [0:1][0:1][0:63];
+    real env_illumination [0:15][0:15];
+    real env_audio = 0.0;
     logic [255:0] chiplet_identity;
     logic         identity_valid;
 
     // Initialize sensors and temp
     real global_temp_celsius = 25.0;
     initial begin
-        for (int x=0; x<2; x++) 
-            for (int y=0; y<2; y++) 
-                for (int s=0; s<64; s++) 
-                    test_sensors[x][y][s] = 0.0;
+        for(int i=0; i<16; i++)
+            for(int j=0; j<16; j++)
+                env_illumination[i][j] = 0.001; // Dark
     end
 
     godfather_business_edition #(
         .MESH_X(2),
-        .MESH_Y(2)
+        .MESH_Y(2),
+        .MESH_Z(2)
     ) dut (
         .power_on(power_on),
-        .global_sensor_voltages(test_sensors),
+        .env_illumination(env_illumination),
+        .env_audio_wave(env_audio),
         .global_temp_celsius(global_temp_celsius),
         .chiplet_identity(chiplet_identity),
         .identity_valid(identity_valid)
@@ -75,11 +77,9 @@ module tb_massive_stress;
         $display("          Injecting 1.0V into ALL 256 sensors across the 2x2 grid simultaneously...");
         
         // Use massive vector assignment to slam the entire grid
-        for (int x = 0; x < 2; x++) begin
-            for (int y = 0; y < 2; y++) begin
-                for (int s = 0; s < 64; s++) begin
-                    test_sensors[x][y][s] = 1.0;
-                end
+        for (int x = 0; x < 16; x++) begin
+            for (int y = 0; y < 16; y++) begin
+                env_illumination[x][y] = 1.0; // Saturate the Retina
             end
         end
 
@@ -92,7 +92,7 @@ module tb_massive_stress;
         // PHASE 3: THERMAL SWEEP & STDP OVERFLOW TEST (NaN Check)
         // -------------------------------------------------------------
         $display("\n[PHASE 3] Sweeping core temperatures and testing STDP asymptote limits.");
-        starting_weight = dut.mesh_col[0].mesh_row[0].tile.cognitive_matrix.conductance[0][0];
+        starting_weight = dut.mesh_layer[0].mesh_col[1].mesh_row[1].cognitive_matrix.tile.cognitive_matrix.conductance[0][0];
         
         // Force extreme automotive temperature (125 Celsius) deep into the neurons
         global_temp_celsius = 125.0;
@@ -103,7 +103,7 @@ module tb_massive_stress;
         $display("          Simulating 5,000 nanoseconds of continuous physical stress...");
         #5000;
         
-        ending_weight = dut.mesh_col[0].mesh_row[0].tile.cognitive_matrix.conductance[0][0];
+        ending_weight = dut.mesh_layer[0].mesh_col[1].mesh_row[1].cognitive_matrix.tile.cognitive_matrix.conductance[0][0];
         $display("          Initial Memristor [0][0] Conductance: %e", starting_weight);
         $display("          Final Memristor [0][0] Conductance:   %e", ending_weight);
         
@@ -126,7 +126,7 @@ module tb_massive_stress;
         forever #500.0 begin
             for (int i = 0; i < 64; i++) begin
                 for (int j = 0; j < 64; j++) begin
-                    $fwrite(fd, "%e,", dut.mesh_col[0].mesh_row[0].tile.cognitive_matrix.conductance[i][j]);
+                    $fwrite(fd, "%e,", dut.mesh_layer[0].mesh_col[1].mesh_row[1].cognitive_matrix.tile.cognitive_matrix.conductance[i][j]);
                 end
                 $fwrite(fd, "\n");
             end
