@@ -63,8 +63,14 @@ def render_brain_telemetry(filename="brain_telemetry.csv", output_dir="renders")
     
     # Calculate the Delta (What the chip actually learned)
     delta_matrix = matrices[-1] - matrices[0]
+    
+    # Calculate symmetric bounds for the bwr colormap to ensure zero is white
+    max_abs_delta = np.max(np.abs(delta_matrix))
+    
     plt.figure(figsize=(8, 6))
-    plt.imshow(delta_matrix, cmap='bwr', aspect='auto') # Blue-White-Red for negative/positive weight shifts
+    # Add vmin/vmax to ensure the diverging colormap centers on 0 and actually scales to the data, 
+    # instead of auto-scaling to an unnoticeable near-zero noise floor or washing out.
+    plt.imshow(delta_matrix, cmap='bwr', aspect='auto', vmin=-max_abs_delta, vmax=max_abs_delta) 
     plt.colorbar(label='Delta Conductance')
     plt.title('Neuroplasticity Map (What the chip learned)')
     plt.savefig(os.path.join(output_dir, 'state_delta_learning.png'))

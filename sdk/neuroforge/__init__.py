@@ -3,7 +3,7 @@ NeuroForge SDK v0.1
 The Python Ecosystem for Project GODFATHER's Mixed-Signal Neuromorphic SoC.
 """
 
-from .compiler import SpikingNetwork, MemristorLayer
+from .compiler import NeuroGraph, AnalogLinear
 from .visualizer import render_brain_telemetry
 
 __version__ = "0.1.0"

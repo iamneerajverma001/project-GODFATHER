@@ -1,21 +1,27 @@
 import os
-from neuroforge import SpikingNetwork, MemristorLayer, render_brain_telemetry
+from neuroforge.compiler import AnalogLinear, NeuroGraph
+from neuroforge import render_brain_telemetry
 
 def main():
     print("==================================================")
-    print("      NEUROFORGE SDK v0.1 - DEVELOPER TEST        ")
+    print("      NEUROFORGE SDK v1.0 - DEEP COMPILER         ")
     print("==================================================")
+
+    # 1. Define the network exactly like PyTorch
+    print("\n[Phase 1] Compiling Neural Geometry...")
+    model = NeuroGraph(name="Godfather_Vision_Core", grid_x=2, grid_y=2, neurons_per_tile=64)
     
-    # 1. Hardware Compilation Test
-    print("\n[Phase 1] Defining Neural Geometry in Python...")
-    net = SpikingNetwork("Godfather_Vision_Core")
+    # Layer 1: Input from Silicon Retina to V1
+    model.add_layer("V1_Cortex", AnalogLinear(in_features=64, out_features=64))
     
-    # Define a 64x64 Crossbar
-    l1 = MemristorLayer(n_pre=64, n_post=64)
-    net.add_crossbar(l1)
+    # Layer 2: V1 to V2
+    model.add_layer("V2_Cortex", AnalogLinear(in_features=64, out_features=128))
     
-    # Compile it to a format the Verilog engine can read
-    net.compile_to_verilog_init("crossbar_init.mem")
+    # Layer 3: Output Classification
+    model.add_layer("Classification", AnalogLinear(in_features=128, out_features=10))
+
+    # Compile the abstract model into physical NoC routes and Crossbar `.mem` files
+    model.compile(output_dir="sdk/build")
     
     # 2. Telemetry Visualization Test
     print("\n[Phase 2] Extracting Silicon Telemetry...")
