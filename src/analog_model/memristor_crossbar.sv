@@ -20,7 +20,13 @@ module memristor_crossbar #(
     input  real v_pre [0:N_PRE-1],   
     input  real v_post [0:N_POST-1], 
     input  real error_gradient,      // The Holy Grail: Global/Local Error routing for 3-factor supervised learning
-    output real i_out [0:N_POST-1]   
+    output real i_out [0:N_POST-1],
+    
+    // Cure 4: HBM DMA Paging Interface (Background weight swapping for trillion-parameter models)
+    input  logic        dma_we,
+    input  logic [15:0] dma_row,
+    input  logic [15:0] dma_col,
+    input  real         dma_wdata
 );
 
     real conductance [0:N_PRE-1][0:N_POST-1];
@@ -118,4 +124,14 @@ module memristor_crossbar #(
         end
         last_time = current_time;
     end
+    
+    // HBM DMA Paging Logic
+    always @(*) begin
+        if (dma_we) begin
+            if (dma_row < N_PRE && dma_col < N_POST) begin
+                conductance[dma_row][dma_col] = dma_wdata;
+            end
+        end
+    end
+
 endmodule

@@ -7,6 +7,8 @@ import random
 import os
 import json
 
+from neuroforge.defect_mapper import DefectMapper
+
 try:
     import torch
     import torch.nn as nn
@@ -134,14 +136,18 @@ class NeuroGraph:
         print(f"NeuroForge: [SUCCESS] NoC Routing Table generated -> {rt_path}")
         
         # 2. Generate Physical Crossbar States (.mem) for ALL Mapped Tiles
+        mapper = DefectMapper()
+        
         for name, layer in self.layers:
             tile_name = self.routing_table[name]["physical_core"]
             mem_path = os.path.join(output_dir, f"{tile_name}_init.mem")
             
             with open(mem_path, 'w') as f:
                 if layer.weights and len(layer.weights) == layer.in_features:
+                    # Apply Silicon Defect Map
+                    safe_weights = mapper.mask_tensor(tile_name, layer.weights, layer.g_min, layer.g_max)
                     for r in range(layer.in_features):
-                        row = [f"{val:e}" for val in layer.weights[r]]
+                        row = [f"{val:e}" for val in safe_weights[r]]
                         f.write(" ".join(row) + "\n")
                 else:
                     for _ in range(layer.in_features):

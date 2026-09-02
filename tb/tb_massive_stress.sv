@@ -25,6 +25,23 @@ module tb_massive_stress;
     logic         swarm_ct_valid;
     logic         swarm_ct_ready = 1;
 
+    // Wafer Scale Transceivers (Dummy)
+    logic [31:0] wafer_rx_data = '0;
+    logic        wafer_rx_req = 1'b0;
+    logic        wafer_rx_ack;
+    logic [31:0] wafer_tx_data;
+    logic        wafer_tx_req;
+    logic        wafer_tx_ack = 1'b1;
+    
+    // HBM DMA Controller
+    logic        hbm_dma_we = 1'b0;
+    logic [7:0]  hbm_dma_tile_x = 0;
+    logic [7:0]  hbm_dma_tile_y = 0;
+    logic [7:0]  hbm_dma_tile_z = 0;
+    logic [15:0] hbm_dma_row = 0;
+    logic [15:0] hbm_dma_col = 0;
+    real         hbm_dma_wdata = 0.0;
+
     // Clock Generation
     initial begin
         clk = 0;
@@ -56,7 +73,20 @@ module tb_massive_stress;
         .swarm_ct_data(swarm_ct_data),
         .swarm_auth_tag(swarm_auth_tag),
         .swarm_ct_valid(swarm_ct_valid),
-        .swarm_ct_ready(swarm_ct_ready)
+        .swarm_ct_ready(swarm_ct_ready),
+        .wafer_rx_data(wafer_rx_data),
+        .wafer_rx_req(wafer_rx_req),
+        .wafer_rx_ack(wafer_rx_ack),
+        .wafer_tx_data(wafer_tx_data),
+        .wafer_tx_req(wafer_tx_req),
+        .wafer_tx_ack(wafer_tx_ack),
+        .hbm_dma_we(hbm_dma_we),
+        .hbm_dma_tile_x(hbm_dma_tile_x),
+        .hbm_dma_tile_y(hbm_dma_tile_y),
+        .hbm_dma_tile_z(hbm_dma_tile_z),
+        .hbm_dma_row(hbm_dma_row),
+        .hbm_dma_col(hbm_dma_col),
+        .hbm_dma_wdata(hbm_dma_wdata)
     );
 
     // Trackers
@@ -92,6 +122,9 @@ module tb_massive_stress;
         end
         
         // Power cycle with extreme thermal noise (Simulated inside the PUF)
+        $display("[PHASE 1.5] Injecting Dark Silicon Thermal Stress (100C)...");
+        global_temp_celsius = 100.0; // Triggers router thermal dropping
+        
         #100 power_on = 0; rst_n = 0; 
         #100 power_on = 1; 
         #10 rst_n = 1;

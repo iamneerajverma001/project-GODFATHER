@@ -24,7 +24,13 @@ module godfather_core_tile #(
     
     input  logic [31:0] rx_aer_data,
     input  logic        rx_aer_req,
-    output logic        rx_aer_ack
+    output logic        rx_aer_ack,
+    
+    // HBM DMA Paging Interface
+    input  logic        dma_we,
+    input  logic [15:0] dma_row,
+    input  logic [15:0] dma_col,
+    input  real         dma_wdata
 );
 
     real crossbar_v_pre [0:N_SENSORS+16+N_NEURONS-1]; 
@@ -73,7 +79,11 @@ module godfather_core_tile #(
         .v_pre(crossbar_v_pre),
         .v_post(crossbar_v_post), 
         .error_gradient(local_error_gradient),
-        .i_out(soma_currents)
+        .i_out(soma_currents),
+        .dma_we(dma_we),
+        .dma_row(dma_row),
+        .dma_col(dma_col),
+        .dma_wdata(dma_wdata)
     );
 
     genvar i;

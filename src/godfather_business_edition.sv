@@ -31,7 +31,25 @@ module godfather_business_edition #(
     output logic [127:0] swarm_ct_data,
     output logic [127:0] swarm_auth_tag,
     output logic         swarm_ct_valid,
-    input  logic         swarm_ct_ready
+    input  logic         swarm_ct_ready,
+    
+    // CURE 2: WAFER-SCALE EDGE TRANSCEIVERS (Chiplet-to-Chiplet AER Routing)
+    input  logic [31:0]  wafer_rx_data,
+    input  logic         wafer_rx_req,
+    output logic         wafer_rx_ack,
+    output logic [31:0]  wafer_tx_data,
+    output logic         wafer_tx_req,
+    input  logic         wafer_tx_ack,
+    
+    // CURE 4: HBM DMA PAGING CONTROLLER INTERFACE
+    // Allows background reprogramming of trillions of parameters
+    input  logic         hbm_dma_we,
+    input  logic [7:0]   hbm_dma_tile_x,
+    input  logic [7:0]   hbm_dma_tile_y,
+    input  logic [7:0]   hbm_dma_tile_z,
+    input  logic [15:0]  hbm_dma_row,
+    input  logic [15:0]  hbm_dma_col,
+    input  real          hbm_dma_wdata
 );
 
     // --------------------------------------------------------------------------
@@ -66,6 +84,12 @@ module godfather_business_edition #(
         .ct_valid(swarm_ct_valid),
         .ct_ready(swarm_ct_ready)
     );
+
+    // --------------------------------------------------------------------------
+    // CURE 1: DARK SILICON THERMAL THROTTLING
+    // --------------------------------------------------------------------------
+    logic global_thermal_throttle;
+    assign global_thermal_throttle = (global_temp_celsius > 85.0);
 
     // --------------------------------------------------------------------------
     // 3D TSV ASYNCHRONOUS INTERCONNECT (Arrays of Handshakes)
@@ -122,6 +146,13 @@ module godfather_business_edition #(
                         real dummy_sensors [0:63]; // No analog sensors for deep cortex
                         for (genvar s = 0; s < 64; s++) assign dummy_sensors[s] = 0.0;
                         
+                        // Address Decoding for DMA (Only write to the targeted tile)
+                        logic tile_dma_we;
+                        assign tile_dma_we = (hbm_dma_we && 
+                                              hbm_dma_tile_x == x && 
+                                              hbm_dma_tile_y == y && 
+                                              hbm_dma_tile_z == z);
+
                         godfather_core_tile #(
                             .TILE_X(x), .TILE_Y(y), .TILE_Z(z), .N_SENSORS(64)
                         ) tile (
@@ -133,7 +164,13 @@ module godfather_business_edition #(
                             
                             .rx_aer_data(router_tx_data[x][y][z][0]),
                             .rx_aer_req(router_tx_req[x][y][z][0]),
-                            .rx_aer_ack(router_tx_ack[x][y][z][0])
+                            .rx_aer_ack(router_tx_ack[x][y][z][0]),
+                            
+                            // DMA
+                            .dma_we(tile_dma_we),
+                            .dma_row(hbm_dma_row),
+                            .dma_col(hbm_dma_col),
+                            .dma_wdata(hbm_dma_wdata)
                         );
                     end
     
@@ -145,6 +182,7 @@ module godfather_business_edition #(
                         .ADDR_WIDTH(32)
                     ) router (
                         .rst_n(rst_n),
+                        .thermal_throttle(global_thermal_throttle),
                         .rx_data(link_data[x][y][z]),
                         .rx_req(link_req[x][y][z]),
                         .rx_ack(link_ack[x][y][z]),
@@ -157,12 +195,22 @@ module godfather_business_edition #(
                     // ==========================================================
                     // 3. 3D DIMENSION WIRING & BOUNDARY AUTO-ACK
                     // ==========================================================
-                    // (Omitted: Full bidirectional XYZ edge-wiring logic for brevity)
-                    // For massive stress testing, we simulate an infinitely fast 
-                    // receiving mesh by looping requests to acknowledges on all 
-                    // external NoC ports.
-                    for (p = 1; p < 7; p++) begin : auto_ack
-                        assign router_tx_ack[x][y][z][p] = router_tx_req[x][y][z][p];
+                    for (p = 1; p < 7; p++) begin : edge_wiring
+                        // Cure 2: Wafer-Scale Transceiver Injection on Tile(0,0,0) North Port (p=1)
+                        if (x == 0 && y == 0 && z == 0 && p == 1) begin
+                            assign link_data[x][y][z][p] = wafer_rx_data;
+                            assign link_req[x][y][z][p]  = wafer_rx_req;
+                            assign wafer_rx_ack          = link_ack[x][y][z][p];
+                            
+                            assign wafer_tx_data         = router_tx_data[x][y][z][p];
+                            assign wafer_tx_req          = router_tx_req[x][y][z][p];
+                            assign router_tx_ack[x][y][z][p] = wafer_tx_ack;
+                        end else begin
+                            // Standard Boundary / Dummy loopback for unconnected edges
+                            assign link_data[x][y][z][p] = '0;
+                            assign link_req[x][y][z][p]  = 1'b0;
+                            assign router_tx_ack[x][y][z][p] = router_tx_req[x][y][z][p];
+                        end
                     end
                     
                 end

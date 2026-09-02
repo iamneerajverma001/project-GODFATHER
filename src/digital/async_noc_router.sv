@@ -17,6 +17,7 @@ module async_noc_router #(
     // Asynchronous Handshake Ports (Req/Ack/Data) for 7 directions
     // 0: Local, 1: North, 2: East, 3: South, 4: West, 5: Up (TSV), 6: Down (TSV)
     input  logic                  rst_n,   // Global asynchronous active-low reset
+    input  logic                  thermal_throttle, // Cure 1: Dark Silicon Throttle
     input  logic [ADDR_WIDTH-1:0] rx_data [0:6],
     input  logic                  rx_req  [0:6],
     output logic                  rx_ack  [0:6],
@@ -57,7 +58,15 @@ module async_noc_router #(
                 else if (target_z < Z_COORD) dest_port = 6; // Down (TSV)
                 else                         dest_port = 0; // Local
                 
-                route_req[i][dest_port] = 1'b1;
+                // Cure 1: Dark Silicon Thermal Throttling
+                // Cure 5: Network Congestion Drop (Simulated via LFSR or simple drop logic)
+                // If thermal throttling is active, drop 50% of spikes to prevent silicon melting.
+                if (thermal_throttle && rx_data[i][0]) begin
+                    // Drop packet (assert ack to sink it, but don't route it)
+                    route_req[i] = 7'b0000000;
+                end else begin
+                    route_req[i][dest_port] = 1'b1;
+                end
             end
         end
     end
@@ -65,7 +74,7 @@ module async_noc_router #(
     // Input Port Acknowledge Aggregation
     always_comb begin
         for (int i = 0; i < 7; i++) begin
-            rx_ack[i] = |route_ack[i]; 
+            rx_ack[i] = (|route_ack[i]) || (rx_req[i] && thermal_throttle && rx_data[i][0]); 
         end
     end
 
