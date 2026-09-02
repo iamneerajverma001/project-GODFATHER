@@ -16,11 +16,22 @@ def main():
     import numpy as np
     
     from neuroforge import LiquidSpikingActivation
+    from neuroforge.nn import AnalogSelfAttention
 
     layer1 = AnalogLinear(64, 64)
     layer1.load_pytorch_weights(np.random.randn(64, 64))
     model.add_layer("V1_Cortex", layer1)
     model.add_layer("V1_LNN", LiquidSpikingActivation(num_neurons=64, init_v_thres=0.75))
+    
+    # Phase 3: The Transformer LLM Block
+    print("NeuroForge: Compiling GPT-style Attention Block...")
+    attn = AnalogSelfAttention(embed_dim=64, num_heads=4)
+    w_q = np.random.randn(64, 64)
+    w_k = np.random.randn(64, 64)
+    w_v = np.random.randn(64, 64)
+    w_o = np.random.randn(64, 64)
+    attn.load_pytorch_weights(w_q, w_k, w_v, w_o)
+    model.add_layer("LLM_Attention", attn)
     
     layer2 = AnalogLinear(64, 128)
     layer2.load_pytorch_weights(np.random.randn(64, 128))

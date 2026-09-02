@@ -81,7 +81,13 @@ class NeuroGraph:
 
     def add_layer(self, layer_name, layer):
         """Adds a logical layer or activation function to the physical stack."""
-        self.layers.append((layer_name, layer))
+        if hasattr(layer, "get_physical_layers"):
+            print(f"NeuroForge: Unpacking Complex Module '{layer_name}' into physical crossbar tiles.")
+            sub_layers = layer.get_physical_layers()
+            for sub_name, sub_layer in sub_layers.items():
+                self.layers.append((f"{layer_name}_{sub_name}", sub_layer))
+        else:
+            self.layers.append((layer_name, layer))
 
     def _place_and_route(self):
         """
