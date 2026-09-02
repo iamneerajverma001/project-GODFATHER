@@ -4,7 +4,12 @@
 # Demonstration: Compiling a PyTorch LLM/Vision Hybrid into Analog Silicon.
 # ==============================================================================
 import os
+import sys
 import numpy as np
+
+# Safety fallback: If running directly from the repository root, ensure sdk is in path
+if os.path.exists("sdk") and os.path.abspath("sdk") not in sys.path:
+    sys.path.insert(0, os.path.abspath("sdk"))
 
 from neuroforge.compiler import AnalogLinear, NeuroGraph
 from neuroforge import LiquidSpikingActivation
