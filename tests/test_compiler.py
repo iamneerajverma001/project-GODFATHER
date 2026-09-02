@@ -11,9 +11,9 @@ def test_analog_linear_scaling():
     weights = np.random.randn(128, 64)
     layer.load_pytorch_weights(weights)
     
-    # Assert physical properties
+    # Assert physical properties (Shattered and padded to crossbar_size)
     weights_np = np.array(layer.weights)
-    assert weights_np.shape == (128, 64)
+    assert weights_np.shape == (128, 128)
     assert np.min(weights_np) >= layer.g_min
     assert np.max(weights_np) <= layer.g_max
 
