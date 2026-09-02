@@ -34,12 +34,12 @@ def main():
     model.add_layer("LLM_Attention", attn)
     
     layer2 = AnalogLinear(64, 128)
-    layer2.load_pytorch_weights(np.random.randn(64, 128))
+    layer2.load_pytorch_weights(np.random.randn(128, 64))
     model.add_layer("V2_Cortex", layer2)
     model.add_layer("V2_LNN", LiquidSpikingActivation(num_neurons=128, init_v_thres=0.6))
     
     layer3 = AnalogLinear(128, 10)
-    layer3.load_pytorch_weights(np.random.randn(128, 10))
+    layer3.load_pytorch_weights(np.random.randn(10, 128))
     model.add_layer("Classification", layer3)
     model.add_layer("Class_LNN", LiquidSpikingActivation(num_neurons=10, init_v_thres=1.0))
 
