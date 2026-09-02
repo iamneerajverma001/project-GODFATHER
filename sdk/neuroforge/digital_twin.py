@@ -65,13 +65,25 @@ class DigitalTwinSimulator:
         print(f"Digital Twin: Holy Grail Engaged - 3-Factor R-STDP Supervised Learning (Reward = {global_reward})")
         start_time = time.time()
         
-        # 2. R-STDP Update using the analytical ODE solution rather than a Python loop
+        # 2. R-STDP Update using the analytical non-linear physics model (Yakopcic-inspired)
+        # Real memristors do not update linearly. They exhibit abrupt SET and gradual RESET.
         for tile_id in self.tiles:
-            # Analytical solution to the exponential STDP decay
-            eligibility_trace = (self.g_max - self.tiles[tile_id]) * 0.05
-            delta = eligibility_trace * global_reward
-            self.tiles[tile_id] += delta
-            self.tiles[tile_id] = np.clip(self.tiles[tile_id], self.g_min, self.g_max)
+            current_g = self.tiles[tile_id]
+            # Normalize conductance (0.0 to 1.0)
+            g_norm = (current_g - self.g_min) / (self.g_max - self.g_min)
+            
+            # Non-linear eligibility trace: 
+            # If reward is positive (LTP), abrupt SET (exponential growth towards G_MAX)
+            # If reward is negative (LTD), gradual RESET (decay towards G_MIN)
+            if global_reward > 0:
+                # Exponential saturation as it approaches G_MAX
+                eligibility_trace = np.exp(-g_norm * 5.0) * 0.1 
+            else:
+                # Gradual decay
+                eligibility_trace = g_norm * 0.05 
+                
+            delta = eligibility_trace * global_reward * (self.g_max - self.g_min)
+            self.tiles[tile_id] = np.clip(current_g + delta, self.g_min, self.g_max)
         
         elapsed = time.time() - start_time
         print(f"Digital Twin: 3D Tensor NoC physics converged in {elapsed:.4f} seconds.")
