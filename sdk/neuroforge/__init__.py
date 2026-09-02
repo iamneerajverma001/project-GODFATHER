@@ -10,6 +10,8 @@ from .optimizer import NeuroForgeOptimizer
 from .swarm_protocol import SwarmAgent, SwarmOrchestrator
 from .defect_mapper import DefectMapper
 from .activation import LiquidSpikingActivation
+from .profiler import NeuroForgeProfiler
+from . import nn
 
 __all__ = [
     "NeuroGraph",
@@ -20,7 +22,9 @@ __all__ = [
     "SwarmAgent",
     "SwarmOrchestrator",
     "DefectMapper",
-    "LiquidSpikingActivation"
+    "LiquidSpikingActivation",
+    "NeuroForgeProfiler",
+    "nn"
 ]
 
 def render_brain_telemetry(csv_path, output_dir):

@@ -35,7 +35,12 @@ def main():
     # Compile the abstract model into physical NoC routes and Crossbar `.mem` files
     model.compile(output_dir="sdk/build")
     
-    # 2. Telemetry Visualization Test
+    # 2. Hardware PPA Profiling (Nsight Equivalent)
+    from neuroforge import NeuroForgeProfiler
+    profiler = NeuroForgeProfiler()
+    profiler.generate_ppa_report()
+    
+    # 3. Telemetry Visualization Test
     print("\n[Phase 2] Extracting Silicon Telemetry...")
     telemetry_path = "brain_telemetry.csv"
     if os.path.exists(telemetry_path):

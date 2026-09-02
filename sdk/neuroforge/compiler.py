@@ -117,6 +117,8 @@ class NeuroGraph:
                 "noc_target_x": target_x,
                 "noc_target_y": target_y,
                 "noc_target_z": target_z,
+                "logical_in": layer.in_features,
+                "logical_out": layer.out_features,
                 "aer_base_addr": allocated_neurons
             }
             
