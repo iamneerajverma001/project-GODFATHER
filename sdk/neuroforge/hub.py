@@ -12,6 +12,7 @@ class SwarmHubHandler(http.server.SimpleHTTPRequestHandler):
     
     # In-memory ledger of encrypted STDP weights
     global_ledger = []
+    seen_nonces = set()
 
     def do_POST(self):
         if self.path == '/push':
@@ -20,11 +21,23 @@ class SwarmHubHandler(http.server.SimpleHTTPRequestHandler):
             payload = json.loads(post_data.decode('utf-8'))
             
             puf_id = payload.get("puf_id")
+            nonce = payload.get("nonce")
             encrypted_weights = payload.get("encrypted_payload")
             
-            print(f"\n[SwarmHub] Received Encrypted STDP Blob from Agent {puf_id[:8]}...")
+            # CURE 4: Replay Attack Protection
+            if nonce in SwarmHubHandler.seen_nonces:
+                print(f"\n[SwarmHub] SECURITY ALERT: Replay Attack detected from {puf_id[:8]}! Payload rejected.")
+                self.send_response(403)
+                self.end_headers()
+                self.wfile.write(b"SwarmHub: REPLAY ATTACK REJECTED.")
+                return
+                
+            SwarmHubHandler.seen_nonces.add(nonce)
+            
+            print(f"\n[SwarmHub] Received secure STDP Blob from Agent {puf_id[:8]} [Nonce: {nonce[:6]}...]")
             SwarmHubHandler.global_ledger.append({
                 "source": puf_id,
+                "timestamp": payload.get("timestamp"),
                 "payload": encrypted_weights
             })
             
