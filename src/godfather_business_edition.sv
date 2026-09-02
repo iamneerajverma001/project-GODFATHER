@@ -43,17 +43,21 @@ module godfather_business_edition #(
     
     // CURE 4: HBM DMA PAGING CONTROLLER INTERFACE
     // Allows background reprogramming of trillions of parameters
-    input  logic         hbm_dma_we,
-    input  logic [7:0]   hbm_dma_tile_x,
-    input  logic [7:0]   hbm_dma_tile_y,
-    input  logic [7:0]   hbm_dma_tile_z,
-    input  logic [15:0]  hbm_dma_row,
-    input  logic [15:0]  hbm_dma_col,
-    input  real          hbm_dma_wdata,
     
-    // CURE 3: PROGRAMMABLE ACTIVATION CSRs (LNN / ALIF Support)
-    input  real          csr_v_thres,
-    input  real          csr_g_leak
+
+    // Host Programming Interface (SPI Bootloader)
+    input  logic spi_sclk,
+    input  logic spi_cs_n,
+    input  logic spi_mosi,
+    output logic spi_miso,
+
+    // Liquid Neural Network (LNN) Global CSRs (Deprecating direct pins for SPI mapping, but kept for legacy bench tests)
+    input  logic [7:0] csr_v_thres,
+    input  logic [7:0] csr_g_leak,
+
+    // Asynchronous Swarm Telemetry Port
+    output logic [127:0] noc_telemetry_pt,
+    output logic         noc_telemetry_valid
 );
 
     // --------------------------------------------------------------------------
@@ -287,4 +291,28 @@ module godfather_business_edition #(
         end
     endgenerate
 
+
+    // ======================================================================
+    // CURE 2: SPI BOOTLOADER / HOST PROGRAMMING INTERFACE
+    // ======================================================================
+    logic [63:0] boot_data;
+    logic boot_req;
+    logic boot_ack;
+
+    spi_bootloader #(
+        .PACKET_WIDTH(64)
+    ) host_bridge (
+        .sys_clk(clk),
+        .rst_n(rst_n),
+        .spi_sclk(spi_sclk),
+        .spi_cs_n(spi_cs_n),
+        .spi_mosi(spi_mosi),
+        .spi_miso(spi_miso),
+        .noc_boot_data(boot_data),
+        .noc_boot_req(boot_req),
+        .noc_boot_ack(boot_ack)
+    );
+
+    // Bootloader injections would be wired to the NoC routers here
+    assign boot_ack = boot_req; // Mock auto-ack for now
 endmodule
