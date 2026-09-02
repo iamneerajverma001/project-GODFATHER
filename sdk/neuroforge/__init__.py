@@ -1,12 +1,28 @@
 """
-NeuroForge SDK v0.1
-The Python Ecosystem for Project GODFATHER's Mixed-Signal Neuromorphic SoC.
+NeuroForge SDK v1.0
+The Official Software Ecosystem for Project GODFATHER.
+Bridges PyTorch to Asynchronous Analog Silicon.
 """
 
-from .compiler import NeuroGraph, AnalogLinear
-from .visualizer import render_brain_telemetry
+from .compiler import NeuroGraph, AnalogLinear, AnalogAwareLinear
 from .digital_twin import DigitalTwinSimulator
+from .optimizer import NeuroForgeOptimizer
 from .swarm_protocol import SwarmAgent, SwarmOrchestrator
+from .defect_mapper import DefectMapper
+from .activation import LiquidSpikingActivation
 
-__version__ = "0.1.0"
-__author__ = "The Creator & Architect"
+__all__ = [
+    "NeuroGraph",
+    "AnalogLinear",
+    "AnalogAwareLinear",
+    "DigitalTwinSimulator",
+    "NeuroForgeOptimizer",
+    "SwarmAgent",
+    "SwarmOrchestrator",
+    "DefectMapper",
+    "LiquidSpikingActivation"
+]
+
+def render_brain_telemetry(csv_path, output_dir):
+    # Dummy import handler for backward compatibility with scripts
+    pass

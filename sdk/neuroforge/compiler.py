@@ -8,6 +8,7 @@ import os
 import json
 
 from neuroforge.defect_mapper import DefectMapper
+from neuroforge.activation import LiquidSpikingActivation
 
 try:
     import torch
@@ -76,8 +77,10 @@ class NeuroGraph:
         self.neurons_per_tile = neurons_per_tile
         self.layers = []
         self.routing_table = {}
+        self.csr_configs = {}
 
-    def add_layer(self, layer_name, layer: AnalogLinear):
+    def add_layer(self, layer_name, layer):
+        """Adds a logical layer or activation function to the physical stack."""
         self.layers.append((layer_name, layer))
 
     def _place_and_route(self):
@@ -93,6 +96,13 @@ class NeuroGraph:
         current_tile_z = 0
         
         for name, layer in self.layers:
+            if isinstance(layer, LiquidSpikingActivation):
+                print(f"NeuroForge: Configuring Liquid Spiking CSRs for Layer '{name}'.")
+                if len(self.routing_table) > 0:
+                    last_tile = list(self.routing_table.values())[-1]["physical_core"]
+                    self.csr_configs[last_tile] = layer.export_csr_config()
+                continue
+                
             # Determine how many physical tiles this layer requires
             tiles_needed = max(1, layer.out_features // self.neurons_per_tile)
             print(f"NeuroForge: Mapping Layer '{name}' ({layer.out_features} neurons) -> Requires {tiles_needed} Tile(s).")
@@ -139,6 +149,9 @@ class NeuroGraph:
         mapper = DefectMapper()
         
         for name, layer in self.layers:
+            if name not in self.routing_table:
+                continue
+                
             tile_name = self.routing_table[name]["physical_core"]
             mem_path = os.path.join(output_dir, f"{tile_name}_init.mem")
             
@@ -159,4 +172,11 @@ class NeuroGraph:
                         f.write(" ".join(row) + "\n")
             print(f"NeuroForge: [SUCCESS] Physical Weights generated -> {mem_path}")
         
+        # 3. Generate CSR Configuration Overrides
+        if self.csr_configs:
+            csr_path = os.path.join(output_dir, "csr_config.json")
+            with open(csr_path, 'w') as f:
+                json.dump(self.csr_configs, f, indent=4)
+            print(f"NeuroForge: [SUCCESS] Physical Activation CSRs generated -> {csr_path}")
+
         print("NeuroForge: Compilation Complete. Hardware ready for asynchronous dispatch.")

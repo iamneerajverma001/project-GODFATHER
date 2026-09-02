@@ -15,17 +15,22 @@ def main():
     # We can inject simulated or real PyTorch tensors
     import numpy as np
     
+    from neuroforge import LiquidSpikingActivation
+
     layer1 = AnalogLinear(64, 64)
     layer1.load_pytorch_weights(np.random.randn(64, 64))
     model.add_layer("V1_Cortex", layer1)
+    model.add_layer("V1_LNN", LiquidSpikingActivation(num_neurons=64, init_v_thres=0.75))
     
     layer2 = AnalogLinear(64, 128)
     layer2.load_pytorch_weights(np.random.randn(64, 128))
     model.add_layer("V2_Cortex", layer2)
+    model.add_layer("V2_LNN", LiquidSpikingActivation(num_neurons=128, init_v_thres=0.6))
     
     layer3 = AnalogLinear(128, 10)
     layer3.load_pytorch_weights(np.random.randn(128, 10))
     model.add_layer("Classification", layer3)
+    model.add_layer("Class_LNN", LiquidSpikingActivation(num_neurons=10, init_v_thres=1.0))
 
     # Compile the abstract model into physical NoC routes and Crossbar `.mem` files
     model.compile(output_dir="sdk/build")
