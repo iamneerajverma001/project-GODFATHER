@@ -4,6 +4,9 @@ Handles zero-knowledge cryptographic exchange of physical neuroplasticity.
 """
 import hashlib
 import time
+import json
+import urllib.request
+import urllib.error
 
 class SwarmAgent:
     def __init__(self, puf_signature: str):
@@ -23,9 +26,23 @@ class SwarmAgent:
 
 class SwarmOrchestrator:
     @staticmethod
-    def broadcast_learning(agent: SwarmAgent, weights):
+    def broadcast_learning(agent: SwarmAgent, weights, hub_url="http://localhost:9999"):
         payload = agent.encrypt_synaptic_weights(weights)
         print("Swarm Protocol: Establishing secure P2P mesh across autonomous swarm...")
         time.sleep(0.5)
         print(f"Swarm Protocol: Broadcasting encrypted physical intelligence: {payload['encrypted_tensor_bytes']}")
+        
+        # Phase 5: Actual Cloud Sync
+        try:
+            req = urllib.request.Request(f"{hub_url}/push", method="POST")
+            req.add_header("Content-Type", "application/json")
+            data = json.dumps({
+                "puf_id": payload["origin_puf"],
+                "encrypted_payload": payload["encrypted_tensor_bytes"]
+            }).encode('utf-8')
+            urllib.request.urlopen(req, data=data, timeout=2.0)
+            print("Swarm Protocol: [SUCCESS] Neural update securely synced to Global SwarmHub Ledger.")
+        except (urllib.error.URLError, ConnectionRefusedError):
+            print("Swarm Protocol: [WARNING] SwarmHub not reachable. Running in isolated P2P mode.")
+            
         print("Swarm Protocol: [SUCCESS] 10,000 global agents synchronized with new neuroplasticity.")

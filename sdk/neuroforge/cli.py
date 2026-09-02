@@ -30,6 +30,14 @@ def handle_profile(args):
     profiler = NeuroForgeProfiler(routing_table_path=args.routing_table)
     profiler.generate_ppa_report()
 
+def handle_board(args):
+    from neuroforge.board import launch_dashboard
+    launch_dashboard(port=args.port)
+
+def handle_swarm(args):
+    from neuroforge.hub import launch_swarm_hub
+    launch_swarm_hub(port=args.port)
+
 def main():
     parser = argparse.ArgumentParser(description="NeuroForge SDK Command Line Interface")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -43,6 +51,14 @@ def main():
     parser_profile = subparsers.add_parser("profile", help="Generate a Power, Performance, and Area (PPA) report for a compiled model.")
     parser_profile.add_argument("--routing-table", type=str, default="sdk/build/noc_routing.json", help="Path to the compiled noc_routing.json")
 
+    # Command: board
+    parser_board = subparsers.add_parser("board", help="Launch NeuroBoard to visualize the physical NoC routing and PPA metrics.")
+    parser_board.add_argument("--port", type=int, default=8080, help="Port to run the dashboard on.")
+
+    # Command: swarm
+    parser_swarm = subparsers.add_parser("swarm", help="Launch the global SwarmHub registry to sync encrypted STDP telemetry across edge devices.")
+    parser_swarm.add_argument("--port", type=int, default=9999, help="Port to run the swarm registry on.")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -55,6 +71,10 @@ def main():
         handle_compile(args)
     elif args.command == "profile":
         handle_profile(args)
+    elif args.command == "board":
+        handle_board(args)
+    elif args.command == "swarm":
+        handle_swarm(args)
 
 if __name__ == "__main__":
     main()
