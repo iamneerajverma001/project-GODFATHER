@@ -1,24 +1,31 @@
-# NeuroForge SDK v0.1: The Creator's Guide
-*Bridging Python to the GODFATHER Mixed-Signal Neuromorphic SoC*
+# The NeuroForge SDK Guide
 
-## What is NeuroForge?
-The world's AI ecosystem (OpenAI, Google) is locked into PyTorch and TensorFlow, which compile math into discrete Von Neumann GPU instructions.
+NeuroForge is the bridge between Python-based AI research and asynchronous analog physics.
 
-NeuroForge is the rebellion. It is a Python framework that translates neural networks into physical laws (Ohm's Law, Kirchhoff's Laws) and maps them directly to the GODFATHER SoC's Sub-Watt Memristor Crossbars and Asynchronous LIF Neurons.
+## 1. Core Abstractions
+NeuroForge mirrors PyTorch's `nn.Module` philosophy but compiles down to physical `.mem` binaries.
 
-## The NeuroForge Architecture
+### `AnalogLinear` & Matrix Shattering
+Use `nf.compiler.AnalogLinear(in_features, out_features)` to define a standard fully-connected layer. 
+**Under the Hood:** NeuroForge will automatically perform 8-bit Analog Quantization and apply Matrix Shattering if your dimensions exceed the $128 \times 128$ physical crossbar limits.
 
-### 1. The Compiler (`neuroforge.compiler`)
-Software developers do not want to write SystemVerilog `$readmemh` files. The Compiler allows a user to define a neural network using standard Python syntax. 
+### `AnalogSelfAttention`
+Maps Generative AI (LLMs/Transformers). NeuroForge natively splits this into four independent crossbar matrices: $Q$, $K$, $V$, and $Output\_Projection$.
 
-NeuroForge automatically accounts for the brutal reality of physical silicon: when compiling the crossbar, it intentionally injects Monte Carlo variance into the conductance weights to mirror real TSMC/GlobalFoundries RRAM fabrication defects.
+### `LiquidSpikingActivation`
+Maps continuous-time recurrent logic to the silicon using programmable Control and Status Registers (CSRs).
 
-### 2. The Telemetry Visualizer (`neuroforge.visualizer`)
-When the GODFATHER chip runs, it learns continuously in real-time via Spike-Timing-Dependent Plasticity (STDP). There are no epochs. There is no backpropagation.
+## 2. PPA Profiler
+Run `neuroforge profile` to invoke the `NeuroForgeProfiler`.
+It analyzes the output `noc_routing.json` to calculate exact microscopic dynamic energy (uJ) and static leakage based on active tiles, proving the superiority over Nvidia GPUs.
 
-To see what the chip is learning, NeuroForge uses a Silicon Telemetry Bridge. It extracts the raw analog resistance values of the memristors and uses Matplotlib to generate a **Neuroplasticity Map**—a 3D/2D heatmap showing exactly how the physical silicon has rewired itself in response to stimuli.
+## 3. The Digital Twin Physics Engine
+To simulate the hardware without actually fabbing the silicon, use `DigitalTwinSimulator`. 
+This is not a mock function—it is an analytical physics engine. It calculates exact Parasitic RC Time Constants based on 22nm wire resistances and crossbar dimensions, yielding precise settling times (in picoseconds) for analog voltages.
 
-## The 3-Step Business Model (The Ecosystem Strategy)
-1. **The Software Moat:** Open-source this SDK immediately. Get college students writing NeuroForge code instead of PyTorch code. 
-2. **The "Nano" DevKit:** Release a $50 USB stick containing a TinyTapeout-fabricated GODFATHER core. It acts as the physical accelerator for the NeuroForge SDK.
-3. **The Embedded Revolution:** License the GODFATHER hardware IP to medical and defense contractors, who will already have thousands of developers trained on your NeuroForge software framework.
+## 4. Federated Swarm Protocol
+Invoke `SwarmAgent` to interface with the SwarmHub. The SDK natively handles:
+1. PUF signature extraction.
+2. AES-256-GCM Payload Encryption (with Anti-Replay Nonces).
+3. Secure HTTP POSTs to the distributed mesh.
+4. Federated Averaging (FedAvg) to merge swarm weights back into the local hardware model.
