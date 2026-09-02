@@ -30,9 +30,10 @@ graph LR
 
 ```mermaid
 graph TD
-    A[Sensory Voltage Input] --> B{1S1R Memristor Matrix}
-    B -->|Physics: Ohm's Law (I = V/R)| C[Analog Current Output]
-    style B fill:#ccffcc,stroke:#00aa00
+    A[Sensory Voltage Input] --> B[1S1R Memristor Matrix]
+    B --> C[Analog Current Output]
+    C --> D[Asynchronous NoC Routing]
+    E[Ohms Law: I equals V divided by R] -.applies.-> B
 ```
 *   **The Physics Advantage:** The chip calculates matrix multiplications instantly, at the speed of light, using physical **Ohm's Law ($I = V/R$)** and **Kirchhoff's Current Law**. There are no ALUs. Data never moves. 
 *   **The Result:** Power consumption drops from hundreds of Watts to **Microwatts**.
