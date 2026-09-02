@@ -16,7 +16,11 @@ module subthreshold_lif #(
     input  real  temp_celsius,      
     output logic spike_out,         
     input  logic spike_ack,         // True Asynchronous Handshake
-    output real  v_membrane         
+    output real  v_membrane,
+    
+    // Cure 3: Programmable Activation Functions (CSRs for Liquid Neural Networks)
+    input  real  csr_v_thres,       // Dynamically programmable Threshold Voltage
+    input  real  csr_g_leak         // Dynamically programmable Leakage Conductance
 );
 
     real v_mem = V_REST;
@@ -62,15 +66,20 @@ module subthreshold_lif #(
                 real dv;
                 real thermal_scaler;
                 
+                // Cure 3: Apply Dynamic CSR Overrides for Liquid Neural Networks
+                real active_g_leak, active_v_thres;
+                active_g_leak = (csr_g_leak != 0.0) ? csr_g_leak : g_leak_actual;
+                active_v_thres = (csr_v_thres != 0.0) ? csr_v_thres : v_thres_actual;
+                
                 thermal_scaler = 1.0 + ((temp_celsius - 25.0) * 0.05);
                 if (thermal_scaler < 0.1) thermal_scaler = 0.1;
                 
-                leak_current = g_leak_actual * thermal_scaler * (v_mem - V_REST);
+                leak_current = active_g_leak * thermal_scaler * (v_mem - V_REST);
                 dv = ((i_synaptic - leak_current) / C_MEMBRANE) * (delta_t * 1e-9); 
                 
                 v_mem = v_mem + dv;
                 
-                if (v_mem >= v_thres_actual) begin
+                if (v_mem >= active_v_thres) begin
                     spike_out = 1;
                     v_mem = V_RESET;
                     waiting_for_ack = 1; // Block integration until the network routes the spike

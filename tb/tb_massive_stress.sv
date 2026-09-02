@@ -41,6 +41,10 @@ module tb_massive_stress;
     logic [15:0] hbm_dma_row = 0;
     logic [15:0] hbm_dma_col = 0;
     real         hbm_dma_wdata = 0.0;
+    
+    // CSRs
+    real         csr_v_thres = 0.0;
+    real         csr_g_leak = 0.0;
 
     // Clock Generation
     initial begin
@@ -86,7 +90,9 @@ module tb_massive_stress;
         .hbm_dma_tile_z(hbm_dma_tile_z),
         .hbm_dma_row(hbm_dma_row),
         .hbm_dma_col(hbm_dma_col),
-        .hbm_dma_wdata(hbm_dma_wdata)
+        .hbm_dma_wdata(hbm_dma_wdata),
+        .csr_v_thres(csr_v_thres),
+        .csr_g_leak(csr_g_leak)
     );
 
     // Trackers

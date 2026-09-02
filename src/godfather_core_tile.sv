@@ -30,7 +30,11 @@ module godfather_core_tile #(
     input  logic        dma_we,
     input  logic [15:0] dma_row,
     input  logic [15:0] dma_col,
-    input  real         dma_wdata
+    input  real         dma_wdata,
+    
+    // Cure 3: Programmable Activation CSRs
+    input  real         csr_v_thres,
+    input  real         csr_g_leak
 );
 
     real crossbar_v_pre [0:N_SENSORS+16+N_NEURONS-1]; 
@@ -94,7 +98,9 @@ module godfather_core_tile #(
                 .temp_celsius(global_temp_celsius),
                 .spike_out(neuron_spikes[i]),
                 .spike_ack(neuron_acks[i]),
-                .v_membrane(soma_voltages[i])
+                .v_membrane(soma_voltages[i]),
+                .csr_v_thres(csr_v_thres),
+                .csr_g_leak(csr_g_leak)
             );
         end
     endgenerate

@@ -49,7 +49,11 @@ module godfather_business_edition #(
     input  logic [7:0]   hbm_dma_tile_z,
     input  logic [15:0]  hbm_dma_row,
     input  logic [15:0]  hbm_dma_col,
-    input  real          hbm_dma_wdata
+    input  real          hbm_dma_wdata,
+    
+    // CURE 3: PROGRAMMABLE ACTIVATION CSRs (LNN / ALIF Support)
+    input  real          csr_v_thres,
+    input  real          csr_g_leak
 );
 
     // --------------------------------------------------------------------------
@@ -70,6 +74,54 @@ module godfather_business_edition #(
     logic [127:0] noc_telemetry_pt;
     logic         noc_telemetry_valid;
     logic         noc_telemetry_ready;
+    
+    // CURE 1: METASTABILITY FLAW (Dual-Clock Asynchronous FIFO)
+    logic [31:0] fifo_read_data;
+    logic        fifo_empty;
+    logic        fifo_read_en;
+    
+    async_fifo #(
+        .DATA_WIDTH(32),
+        .ADDR_WIDTH(4)
+    ) telemetry_cdc (
+        // Async Write Domain (Driven by Tile(0,0,0) Port 6 in the generate block)
+        .async_req(telemetry_async_req),
+        .async_ack(telemetry_async_ack),
+        .async_data(telemetry_async_data),
+        // Sync Read Domain
+        .clk(clk),
+        .rst_n(rst_n),
+        .read_en(fifo_read_en),
+        .read_data(fifo_read_data),
+        .empty(fifo_empty)
+    );
+    
+    // 32-to-128 Bit Synchronous Packer
+    logic [127:0] packer_reg;
+    logic [1:0]   packer_count;
+    
+    assign fifo_read_en = !fifo_empty && (!noc_telemetry_valid || noc_telemetry_ready);
+    
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            packer_count <= 0;
+            noc_telemetry_valid <= 0;
+        end else begin
+            if (noc_telemetry_ready && noc_telemetry_valid) begin
+                noc_telemetry_valid <= 0;
+            end
+            if (fifo_read_en) begin
+                packer_reg <= {packer_reg[95:0], fifo_read_data};
+                if (packer_count == 3) begin
+                    packer_count <= 0;
+                    noc_telemetry_pt <= {packer_reg[95:0], fifo_read_data};
+                    noc_telemetry_valid <= 1;
+                end else begin
+                    packer_count <= packer_count + 1;
+                end
+            end
+        end
+    end
     
     aes_256_gcm_engine swarm_crypto (
         .clk(clk),
@@ -102,6 +154,11 @@ module godfather_business_edition #(
     logic [31:0] router_tx_data [0:MESH_X-1][0:MESH_Y-1][0:MESH_Z-1][0:6];
     logic        router_tx_req  [0:MESH_X-1][0:MESH_Y-1][0:MESH_Z-1][0:6];
     logic        router_tx_ack  [0:MESH_X-1][0:MESH_Y-1][0:MESH_Z-1][0:6];
+
+    // Telemetry Async CDC Taps
+    logic        telemetry_async_req;
+    logic        telemetry_async_ack;
+    logic [31:0] telemetry_async_data;
 
     // --------------------------------------------------------------------------
     // PHYSICAL 3D NEURAL TENSOR GENERATION
@@ -170,7 +227,11 @@ module godfather_business_edition #(
                             .dma_we(tile_dma_we),
                             .dma_row(hbm_dma_row),
                             .dma_col(hbm_dma_col),
-                            .dma_wdata(hbm_dma_wdata)
+                            .dma_wdata(hbm_dma_wdata),
+                            
+                            // CSRs
+                            .csr_v_thres(csr_v_thres),
+                            .csr_g_leak(csr_g_leak)
                         );
                     end
     
@@ -205,6 +266,14 @@ module godfather_business_edition #(
                             assign wafer_tx_data         = router_tx_data[x][y][z][p];
                             assign wafer_tx_req          = router_tx_req[x][y][z][p];
                             assign router_tx_ack[x][y][z][p] = wafer_tx_ack;
+                        end else if (x == 0 && y == 0 && z == 0 && p == 6) begin
+                            // Cure 1: Telemetry Tap to Sync Crypto Engine via CDC
+                            assign link_data[x][y][z][p] = '0;
+                            assign link_req[x][y][z][p]  = 1'b0;
+                            
+                            assign telemetry_async_data = router_tx_data[x][y][z][p];
+                            assign telemetry_async_req  = router_tx_req[x][y][z][p];
+                            assign router_tx_ack[x][y][z][p] = telemetry_async_ack;
                         end else begin
                             // Standard Boundary / Dummy loopback for unconnected edges
                             assign link_data[x][y][z][p] = '0;
