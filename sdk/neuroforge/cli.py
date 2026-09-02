@@ -20,9 +20,10 @@ def print_banner():
 def handle_compile(args):
     print(f"NeuroForge CLI: Compiling PyTorch model from {args.model_script}")
     # In a real environment, this would dynamically import the user's script
-    # and intercept the model. For now, we will run our test script.
+    # and intercept the model. For now, we will run our example script.
     import subprocess
-    subprocess.run([sys.executable, "sdk/run_neuroforge.py"])
+    script_path = args.model_script if os.path.exists(args.model_script) else "examples/resnet_llm_hybrid.py"
+    subprocess.run([sys.executable, script_path])
 
 def handle_profile(args):
     print(f"NeuroForge CLI: Profiling PPA metrics for NoC routing table at {args.routing_table}")
