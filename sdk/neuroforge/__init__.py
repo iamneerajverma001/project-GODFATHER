@@ -1,8 +1,11 @@
-"""
-NeuroForge SDK v1.0
-The Official Software Ecosystem for Project GODFATHER.
-Bridges PyTorch to Asynchronous Analog Silicon.
-"""
+# ==============================================================================
+# NeuroForge SDK v1.0
+# The Official Software Ecosystem for Project GODFATHER.
+# 
+# A PyTorch-compatible deep-compiler that seamlessly shatters, quantizes, 
+# and routes standard Neural Networks into asynchronous analog Silicon.
+# ==============================================================================
+
 
 from .compiler import NeuroGraph, AnalogLinear, AnalogAwareLinear
 from .digital_twin import DigitalTwinSimulator
